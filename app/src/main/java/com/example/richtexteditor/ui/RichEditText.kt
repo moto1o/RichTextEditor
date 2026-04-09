@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.*
+import android.text.style.*
 import android.util.AttributeSet
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
@@ -38,7 +39,7 @@ class RichEditText @JvmOverloads constructor(
             handleInputContentInfo(inputContentInfo)
             true
         }
-        return InputConnectionCompat.createWrapper(this, ic, editorInfo, callback)
+        return InputConnectionCompat.createWrapper(ic, editorInfo, callback)
     }
 
     /**
@@ -75,17 +76,21 @@ class RichEditText @JvmOverloads constructor(
 
             for (i in 0 until clip.itemCount) {
                 val item = clip.getItemAt(i)
-                // 1. 优先处理 HTML 富文本
-                val htmlText = item.coerceToHtmlText(context)
-                if (!htmlText.isNullOrBlank()) {
-                    pasteHtml(htmlText)
-                    return true
+                // 1. 优先处理 HTML 富文本 (API 33+)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    val htmlText = item.coerceToHtmlText(context)
+                    if (!htmlText.isNullOrBlank()) {
+                        pasteHtml(htmlText)
+                        return true
+                    }
                 }
-                // 2. 降级：处理带 Span 的 CharSequence
-                val styledText = item.coerceToStyledText(context)
-                if (styledText is Spanned) {
-                    insertSpanned(styledText)
-                    return true
+                // 2. 降级：处理带 Span 的 CharSequence (API 33+)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    val styledText = item.coerceToStyledText(context)
+                    if (styledText is Spanned) {
+                        insertSpanned(styledText)
+                        return true
+                    }
                 }
             }
         }
@@ -125,15 +130,21 @@ class RichEditText @JvmOverloads constructor(
 
         for (i in 0 until clip.itemCount) {
             val item = clip.getItemAt(i)
-            val htmlText = item.coerceToHtmlText(context)
-            if (!htmlText.isNullOrBlank()) {
-                pasteHtml(htmlText)
-                return
+            // 1. 优先处理 HTML 富文本 (API 33+)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                val htmlText = item.coerceToHtmlText(context)
+                if (!htmlText.isNullOrBlank()) {
+                    pasteHtml(htmlText)
+                    return
+                }
             }
-            val styledText = item.coerceToStyledText(context)
-            if (styledText is Spanned) {
-                insertSpanned(styledText)
-                return
+            // 2. 降级：处理带 Span 的 CharSequence (API 33+)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                val styledText = item.coerceToStyledText(context)
+                if (styledText is Spanned) {
+                    insertSpanned(styledText)
+                    return
+                }
             }
             // 纯文本降级
             val text = item.coerceToText(context)
@@ -171,13 +182,14 @@ class RichEditText @JvmOverloads constructor(
         val end = selectionEnd
         if (start == end) return
 
+        @Suppress("UNCHECKED_CAST")
         val existingSpans = editable.getSpans(start, end, CharacterStyle::class.java)
-            .filter(matcher)
+            .filter(matcher) as List<T>
 
         if (existingSpans.isEmpty()) {
             editable.setSpan(newSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         } else {
-            existingSpans.forEach { editable.removeSpan(it) }
+            existingSpans.forEach { span -> editable.removeSpan(span) }
         }
         notifyChanged()
     }
