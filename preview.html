@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Android 富文本编辑器 - UI 设计预览</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #E8EDF2;
+    font-family: -apple-system, 'Roboto', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 24px 16px;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  /* ===== 手机壳 ===== */
+  .phone-shell {
+    width: 360px;
+    background: #1a1a2e;
+    border-radius: 40px;
+    padding: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 0 0 2px #333;
+    position: relative;
+  }
+  .phone-notch {
+    width: 120px;
+    height: 24px;
+    background: #1a1a2e;
+    border-radius: 0 0 16px 16px;
+    margin: 0 auto 0;
+    position: relative;
+    z-index: 10;
+  }
+  .phone-screen {
+    background: #F5F5F5;
+    border-radius: 28px;
+    overflow: hidden;
+    height: 740px;
+    position: relative;
+  }
+  .phone-home-bar {
+    height: 4px;
+    width: 120px;
+    background: #555;
+    border-radius: 2px;
+    margin: 8px auto 4px;
+  }
+
+  /* ===== 状态栏 ===== */
+  .status-bar {
+    background: #1565C0;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    font-size: 11px;
+    color: white;
+  }
+
+  /* ===== AppBar ===== */
+  .app-bar {
+    background: #1976D2;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .app-bar-title {
+    color: white;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+  .app-bar-icon {
+    color: white;
+    margin-left: auto;
+    font-size: 20px;
+    opacity: 0.9;
+  }
+
+  /* ===== 滚动内容 ===== */
+  .scroll-content {
+    height: calc(740px - 80px);
+    overflow-y: auto;
+    padding: 14px;
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
+  }
+  .scroll-content::-webkit-scrollbar { width: 4px; }
+  .scroll-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+
+  /* ===== 通用样式 ===== */
+  .section-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #212121;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .divider {
+    height: 1px;
+    background: #E0E0E0;
+    margin: 14px 0;
+  }
+
+  /* ===== 格式工具栏 ===== */
+  .format-toolbar {
+    background: #F0F4FF;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px 8px 0 0;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    padding: 0 6px;
+    gap: 2px;
+  }
+  .fmt-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: bold;
+    color: #333;
+    transition: background 0.15s;
+  }
+  .fmt-btn:hover { background: rgba(25,118,210,0.12); }
+  .fmt-btn.active { background: rgba(25,118,210,0.2); color: #1976D2; }
+  .fmt-divider { width: 1px; height: 22px; background: #E0E0E0; margin: 0 3px; }
+  .fmt-paste-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(25,118,210,0.08);
+    border: 1px solid rgba(25,118,210,0.3);
+    font-size: 11px;
+    color: #1976D2;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* ===== 编辑区 ===== */
+  .editor-box {
+    min-height: 160px;
+    background: white;
+    border: 1px solid #E0E0E0;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 10px;
+    font-size: 14px;
+    color: #212121;
+    line-height: 1.6;
+    position: relative;
+    cursor: text;
+  }
+  .editor-placeholder {
+    color: #BDBDBD;
+    font-size: 13px;
+  }
+  .editor-content {
+    line-height: 1.7;
+  }
+  .editor-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    display: block;
+    margin: 4px 0;
+  }
+  .editor-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.2em;
+    background: #1976D2;
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* ===== 预览区 ===== */
+  .preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .char-count { font-size: 11px; color: #BDBDBD; }
+  .preview-box {
+    min-height: 100px;
+    max-height: 140px;
+    background: #FAFAFA;
+    border: 1px solid #E3F2FD;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 14px;
+    color: #212121;
+    overflow-y: auto;
+    line-height: 1.6;
+  }
+  .preview-box img {
+    max-width: 100%;
+    border-radius: 4px;
+    display: block;
+    margin: 4px 0;
+  }
+
+  /* ===== 输入框（替换区）===== */
+  .replace-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .input-field {
+    flex: 1;
+    border: 1.5px solid #BDBDBD;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: #212121;
+    background: white;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: #1976D2; }
+  .input-field::placeholder { color: #BDBDBD; }
+  .input-label {
+    font-size: 10px;
+    color: #9E9E9E;
+    margin-bottom: 3px;
+  }
+  .input-group { flex: 1; }
+
+  /* ===== 五大按钮 ===== */
+  .buttons-row {
+    display: flex;
+    gap: 5px;
+  }
+  .action-btn {
+    flex: 1;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transition: filter 0.15s, transform 0.1s;
+    letter-spacing: 0.2px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    line-height: 1.2;
+  }
+  .action-btn:hover { filter: brightness(1.1); }
+  .action-btn:active { transform: scale(0.96); filter: brightness(0.95); }
+  .action-btn .btn-icon { font-size: 14px; }
+  .btn-replace  { background: #FF6F00; }
+  .btn-copy     { background: #1976D2; }
+  .btn-copy-clr { background: #7B1FA2; }
+  .btn-clear    { background: #D32F2F; }
+  .btn-save     { background: #388E3C; }
+
+  /* ===== 状态提示 ===== */
+  .status-tip {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .status-success { background: #E8F5E9; color: #2E7D32; }
+  .status-warning { background: #FFF3E0; color: #E65100; }
+
+  /* ===== 右侧：架构说明 ===== */
+  .doc-panel {
+    width: 460px;
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    align-self: flex-start;
+  }
+  .doc-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1565C0;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .doc-subtitle {
+    font-size: 13px;
+    color: #757575;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #E0E0E0;
+  }
+  .doc-section {
+    margin-bottom: 18px;
+  }
+  .doc-section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1976D2;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .feature-card {
+    background: #F8F9FF;
+    border-left: 3px solid #1976D2;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .feature-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #212121;
+    margin-bottom: 4px;
+  }
+  .feature-desc {
+    font-size: 12px;
+    color: #616161;
+    line-height: 1.5;
+  }
+  .btn-feature {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .btn-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+  .btn-feature-title { font-weight: 600; color: #212121; }
+  .btn-feature-desc { color: #757575; font-size: 11px; margin-top: 1px; }
+  .arch-tag {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin: 3px;
+  }
+  .tag-blue   { background: #E3F2FD; color: #1565C0; }
+  .tag-green  { background: #E8F5E9; color: #2E7D32; }
+  .tag-purple { background: #F3E5F5; color: #6A1B9A; }
+  .tag-orange { background: #FFF3E0; color: #E65100; }
+  .file-tree {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .file-tree .dir { color: #64B5F6; }
+  .file-tree .file { color: #A5D6A7; }
+  .file-tree .comment { color: #757575; }
+</style>
+</head>
+<body>
+
+<!-- ===== 手机预览 ===== -->
+<div class="phone-shell">
+  <div class="phone-notch"></div>
+  <div class="phone-screen">
+
+    <!-- 状态栏 -->
+    <div class="status-bar">
+      <span>9:41</span>
+      <span>📶 WiFi 🔋</span>
+    </div>
+
+    <!-- AppBar -->
+    <div class="app-bar">
+      <span class="app-bar-title">📝 富文本编辑器</span>
+      <span class="app-bar-icon">⋮</span>
+    </div>
+
+    <!-- 滚动内容 -->
+    <div class="scroll-content">
+
+      <!-- 编辑区 -->
+      <div class="section-label">📝 编辑区域</div>
+
+      <!-- 格式工具栏 -->
+      <div class="format-toolbar">
+        <button class="fmt-btn active" title="粗体"><b>B</b></button>
+        <button class="fmt-btn" title="斜体"><i>I</i></button>
+        <button class="fmt-btn" title="下划线"><u>U</u></button>
+        <div class="fmt-divider"></div>
+        <button class="fmt-btn" title="插入图片">🖼</button>
+        <div class="fmt-divider"></div>
+        <div class="fmt-paste-btn">📋 粘贴富文本</div>
+      </div>
+
+      <!-- 编辑框内容（模拟带格式图文） -->
+      <div class="editor-box">
+        <div class="editor-content">
+          <p><strong>产品发布公告</strong></p>
+          <p>我们很高兴宣布 <span style="color:#1976D2;font-weight:bold">v2.0</span> 正式发布！</p>
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='80' viewBox='0 0 280 80'%3E%3Crect width='280' height='80' fill='%23E3F2FD' rx='6'/%3E%3Ctext x='140' y='45' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%231976D2'%3E🖼 图片内容（粘贴自剪切板）%3C/text%3E%3C/svg%3E" alt="示例图片">
+          <p>主要功能：<em>支持图文混排、富文本格式保留</em></p>
+          <p>• 粗体 / 斜体 / 下划线<br>• <span style="background:#FFF9C4">关键字高亮</span><br>• 图片嵌入</p>
+          <span class="editor-cursor"></span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- 预览区 -->
+      <div class="preview-header">
+        <div class="section-label">👁 实时预览</div>
+        <span class="char-count">86 字</span>
+      </div>
+      <div class="preview-box">
+        <p><strong>产品发布公告</strong></p>
+        <p>我们很高兴宣布 <span style="color:#1976D2;font-weight:bold">v2.0</span> 正式发布！</p>
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='60' viewBox='0 0 260 60'%3E%3Crect width='260' height='60' fill='%23E3F2FD' rx='4'/%3E%3Ctext x='130' y='36' text-anchor='middle' font-family='sans-serif' font-size='12' fill='%231976D2'%3E🖼 图片预览%3C/text%3E%3C/svg%3E" alt="预览">
+        <p>主要功能：<em>支持图文混排、富文本格式保留</em></p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- 关键字替换 -->
+      <div class="section-label">🔍 关键字替换</div>
+      <div class="replace-row">
+        <div class="input-group">
+          <div class="input-label">要替换的关键字</div>
+          <input class="input-field" type="text" placeholder="输入关键字…" value="v2.0">
+        </div>
+        <div class="input-group">
+          <div class="input-label">替换为</div>
+          <input class="input-field" type="text" placeholder="替换内容…" value="v3.0">
+        </div>
+      </div>
+
+      <!-- 五大按钮 -->
+      <div class="buttons-row">
+        <button class="action-btn btn-replace" onclick="handleBtn(this,'替换完成！找到 2 处','success')">
+          <span class="btn-icon">🔄</span>替换
+        </button>
+        <button class="action-btn btn-copy" onclick="handleBtn(this,'已复制到剪切板 ✓','success')">
+          <span class="btn-icon">📋</span>复制
+        </button>
+        <button class="action-btn btn-copy-clr" onclick="handleBtn(this,'已复制并清空 ✓','success')">
+          <span class="btn-icon">📤</span><span style="font-size:10px">复制清空</span>
+        </button>
+        <button class="action-btn btn-clear" onclick="handleBtn(this,'内容已清空','warning')">
+          <span class="btn-icon">🗑️</span>清空
+        </button>
+        <button class="action-btn btn-save" onclick="handleBtn(this,'已保存至文档目录 ✓','success')">
+          <span class="btn-icon">💾</span>保存
+        </button>
+      </div>
+
+      <!-- 状态提示 -->
+      <div id="statusTip" class="status-tip status-success" style="display:none"></div>
+
+      <div style="height:16px"></div>
+    </div><!-- end scroll -->
+
+  </div><!-- end screen -->
+  <div class="phone-home-bar"></div>
+</div><!-- end phone -->
+
+<!-- ===== 架构文档面板 ===== -->
+<div class="doc-panel">
+  <div class="doc-title">📲 Android 富文本编辑器</div>
+  <div class="doc-subtitle">设计方案 · Android 原生开发 · minSdk 24 · targetSdk 34</div>
+
+  <!-- 架构 -->
+  <div class="doc-section">
+    <div class="doc-section-title">🏗️ 应用架构（MVVM）</div>
+    <div class="file-tree">
+<span class="dir">RichTextEditor/</span>
+├── <span class="dir">app/src/main/</span>
+│   ├── <span class="dir">java/com/example/richtexteditor/</span>
+│   │   ├── <span class="dir">ui/</span>
+│   │   │   ├── <span class="file">MainActivity.kt</span>       <span class="comment"># 主界面</span>
+│   │   │   └── <span class="file">RichEditText.kt</span>      <span class="comment"># 自定义富文本控件</span>
+│   │   ├── <span class="dir">viewmodel/</span>
+│   │   │   └── <span class="file">EditorViewModel.kt</span>   <span class="comment"># 业务逻辑层</span>
+│   │   └── <span class="dir">utils/</span>
+│   │       └── <span class="file">FileUtils.kt</span>         <span class="comment"># 文件保存工具</span>
+│   └── <span class="dir">res/</span>
+│       ├── <span class="file">layout/activity_main.xml</span>
+│       ├── <span class="file">values/strings.xml</span>
+│       ├── <span class="file">values/colors.xml</span>
+│       └── <span class="file">drawable/*.xml</span>         <span class="comment"># 图标&背景</span>
+└── <span class="file">build.gradle</span>
+    </div>
+  </div>
+
+  <!-- 核心功能 -->
+  <div class="doc-section">
+    <div class="doc-section-title">⚡ 核心功能实现</div>
+    <div class="feature-card">
+      <div class="feature-title">📋 富文本粘贴（RichEditText.kt）</div>
+      <div class="feature-desc">重写 <code>onTextContextMenuItem()</code>，优先解析剪切板 HTML（<code>ClipData.MIMETYPE_TEXT_HTML</code>），使用系统 <code>Html.fromHtml()</code> 还原粗体/斜体/颜色/图片等 Span 格式。同时支持从微信/浏览器/Office 粘贴保留格式。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">👁 实时预览</div>
+      <div class="feature-desc">编辑器通过 <code>TextWatcher.afterTextChanged()</code> 监听每次变化，将 <code>Spanned</code> 对象直接赋值给 <code>tvPreview.text</code>，无需额外解析，实现零延迟同步渲染。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">🔍 关键字替换（保留格式）</div>
+      <div class="feature-desc">使用 <code>SpannableStringBuilder.replace()</code> 在保留原 Span 的前提下替换纯文本内容。支持多处同时替换并计数反馈。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-title">💾 HTML 保存（FileUtils.kt）</div>
+      <div class="feature-desc">通过 <code>Html.toHtml(Spanned)</code> 将富文本序列化为 HTML 文件，Android 10+ 存入应用私有目录，旧版存入公共 Documents 目录。文件名含时间戳防覆盖。</div>
+    </div>
+  </div>
+
+  <!-- 五大按钮 -->
+  <div class="doc-section">
+    <div class="doc-section-title">🎯 五大功能按钮</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="btn-feature" style="background:#FFF3E0">
+        <span class="btn-badge" style="background:#FF6F00">1</span>
+        <div><div class="btn-feature-title">替换</div><div class="btn-feature-desc">将第一个输入框关键字替换为第二个输入框内容，保留富文本格式，显示替换次数</div></div>
+      </div>
+      <div class="btn-feature" style="background:#E3F2FD">
+        <span class="btn-badge" style="background:#1976D2">2</span>
+        <div><div class="btn-feature-title">复制</div><div class="btn-feature-desc">将编辑器全部内容（HTML 格式）复制到系统剪切板，可粘贴到任意支持富文本的应用</div></div>
+      </div>
+      <div class="btn-feature" style="background:#F3E5F5">
+        <span class="btn-badge" style="background:#7B1FA2">3</span>
+        <div><div class="btn-feature-title">复制并清空</div><div class="btn-feature-desc">先执行复制到剪切板，再清空编辑区。操作前弹出二次确认对话框防误触</div></div>
+      </div>
+      <div class="btn-feature" style="background:#FFEBEE">
+        <span class="btn-badge" style="background:#D32F2F">4</span>
+        <div><div class="btn-feature-title">清空</div><div class="btn-feature-desc">清空编辑器和预览区所有内容。弹出确认对话框，防止误操作丢失数据</div></div>
+      </div>
+      <div class="btn-feature" style="background:#E8F5E9">
+        <span class="btn-badge" style="background:#388E3C">5</span>
+        <div><div class="btn-feature-title">保存</div><div class="btn-feature-desc">将内容保存为带完整 HTML 样式的 .html 文件到本地存储，文件名含时间戳</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 技术栈 -->
+  <div class="doc-section">
+    <div class="doc-section-title">🔧 技术栈</div>
+    <div>
+      <span class="arch-tag tag-blue">Kotlin 1.9</span>
+      <span class="arch-tag tag-blue">MVVM 架构</span>
+      <span class="arch-tag tag-blue">ViewBinding</span>
+      <span class="arch-tag tag-green">Material 3</span>
+      <span class="arch-tag tag-green">Jetpack ViewModel</span>
+      <span class="arch-tag tag-green">LiveData</span>
+      <span class="arch-tag tag-purple">Coroutines</span>
+      <span class="arch-tag tag-purple">SpannableString</span>
+      <span class="arch-tag tag-purple">Html.fromHtml</span>
+      <span class="arch-tag tag-orange">minSdk 24</span>
+      <span class="arch-tag tag-orange">targetSdk 34</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function handleBtn(btn, msg, type) {
+  const tip = document.getElementById('statusTip');
+  tip.textContent = (type === 'success' ? '✅ ' : '⚠️ ') + msg;
+  tip.className = 'status-tip status-' + type;
+  tip.style.display = 'flex';
+  clearTimeout(tip._timer);
+  tip._timer = setTimeout(() => { tip.style.display = 'none'; }, 3000);
+}
+</script>
+</body>
+</html>

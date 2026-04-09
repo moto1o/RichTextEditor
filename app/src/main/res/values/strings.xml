@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">富文本编辑器</string>
+    <string name="label_editor">📝 编辑区域</string>
+    <string name="label_preview">👁 实时预览</string>
+    <string name="label_replace">🔍 关键字替换</string>
+
+    <string name="hint_editor">在此输入或粘贴图文内容…\n支持从微信/浏览器等复制带格式内容直接粘贴。</string>
+    <string name="hint_preview">预览效果将在此实时显示…</string>
+    <string name="hint_paste_rich">点击可粘贴带格式内容</string>
+    <string name="hint_search_keyword">要替换的关键字</string>
+    <string name="hint_replace_content">替换为</string>
+
+    <string name="format_bold">粗体</string>
+    <string name="format_italic">斜体</string>
+    <string name="format_underline">下划线</string>
+    <string name="insert_image">插入图片</string>
+    <string name="paste_rich">粘贴富文本</string>
+
+    <!-- 五大按钮 -->
+    <string name="btn_replace">替换</string>
+    <string name="btn_copy_all">复制</string>
+    <string name="btn_copy_clear">复制清空</string>
+    <string name="btn_clear">清空</string>
+    <string name="btn_save">保存</string>
+</resources>
