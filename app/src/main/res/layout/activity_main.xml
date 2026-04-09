@@ -188,7 +188,8 @@
                     android:padding="12dp"
                     android:textSize="15sp"
                     android:textColor="@color/text_primary"
-                    android:text="@string/hint_preview" />
+                    android:textColorHint="@color/text_hint"
+                    android:hint="@string/hint_preview" />
 
             </ScrollView>
 

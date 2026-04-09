@@ -1,0 +1,19 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- 白底圆角矩形背景上的图标 -->
+    <!-- 背景圆角矩形 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,30h48v48h-48z"/>
+    <!-- 文档图标 + 笔 -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M38,38h32v4H42v20h24v-12h4v16H38V38z"/>
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M64,42l8,8 -4,4 -8,-8z"/>
+    <path
+        android:fillColor="#64B5F6"
+        android:pathData="M68,46l8,8v12l-8,-4v-16z"/>
+</vector>

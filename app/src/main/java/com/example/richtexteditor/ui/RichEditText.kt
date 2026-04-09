@@ -1,6 +1,5 @@
 package com.example.richtexteditor.ui
 
-import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Typeface

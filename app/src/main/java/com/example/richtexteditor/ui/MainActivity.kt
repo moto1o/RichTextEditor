@@ -36,23 +36,29 @@ class MainActivity : AppCompatActivity() {
     //  编辑器初始化
     // ===========================
     private fun setupEditor() {
-        // 实时监听文本变化 -> 更新预览 + 字数统计
+        // 监听文本变化 -> 更新预览区 + 字数统计
         binding.richEditor.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 val spanned = binding.richEditor.getRichContent()
                 viewModel.onEditorContentChanged(spanned)
-                // 实时预览
-                binding.tvPreview.text = spanned
+                updatePreview(spanned)
             }
         })
 
-        // 富文本变化回调（格式切换后触发）
+        // 富文本格式变化回调（粘贴/格式切换后手动刷新预览）
         binding.richEditor.onRichTextChanged = { spanned ->
-            binding.tvPreview.text = spanned
-            viewModel.onEditorContentChanged(android.text.SpannedString(spanned))
+            viewModel.onEditorContentChanged(spanned)
+            updatePreview(spanned)
         }
+    }
+
+    /**
+     * 统一更新预览区（复用逻辑，避免重复）
+     */
+    private fun updatePreview(spanned: CharSequence) {
+        binding.tvPreview.text = spanned
     }
 
     // ===========================
