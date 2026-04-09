@@ -3,16 +3,21 @@ package com.example.richtexteditor.ui
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Typeface
-import android.os.Bundle
-import android.text.*
-import android.text.style.*
+import android.text.Editable
+import android.text.Html
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.SpannedString
+import android.text.style.BackgroundColorSpan
+import android.text.style.CharacterStyle
+import android.text.style.ImageSpan
+import android.text.style.StrikethroughSpan
+import android.text.style.StyleSpan
+import android.text.style.UnderlineSpan
 import android.util.AttributeSet
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputConnection
 import androidx.appcompat.widget.AppCompatEditText
-import androidx.core.view.inputmethod.EditorInfoCompat
-import androidx.core.view.inputmethod.InputConnectionCompat
-import androidx.core.view.inputmethod.InputContentInfoCompat
 
 /**
  * 富文本编辑器 — 支持粘贴带格式图文内容
@@ -31,40 +36,6 @@ class RichEditText @JvmOverloads constructor(
 
     // 粘贴富文本时的回调，用于通知 Activity 更新预览
     var onRichTextChanged: ((Spanned) -> Unit)? = null
-
-    override fun onCreateInputConnection(editorInfo: EditorInfo): InputConnection {
-        val ic = super.onCreateInputConnection(editorInfo)!!
-        EditorInfoCompat.setContentMimeTypes(editorInfo, arrayOf("image/*"))
-        val callback = InputConnectionCompat.OnCommitContentListener { inputContentInfo: InputContentInfoCompat, _: Int, _: Bundle? ->
-            handleInputContentInfo(inputContentInfo)
-            true
-        }
-        return InputConnectionCompat.createWrapper(ic, editorInfo, callback)
-    }
-
-    /**
-     * 处理键盘/输入法传入的富媒体内容（如 GBoard 的贴纸/图片）
-     */
-    private fun handleInputContentInfo(info: InputContentInfoCompat) {
-        try {
-            info.requestPermission()
-            val uri = info.contentUri
-            val drawable = context.contentResolver.openInputStream(uri)?.use {
-                android.graphics.drawable.Drawable.createFromStream(it, uri.toString())
-            } ?: return
-            drawable.setBounds(0, 0, drawable.intrinsicWidth.coerceAtMost(400),
-                drawable.intrinsicHeight.coerceAtMost(400))
-            val imageSpan = ImageSpan(drawable, uri.toString())
-            val editable = editableText
-            val start = selectionStart.coerceAtLeast(0)
-            val end = selectionEnd.coerceAtLeast(start)
-            editable.replace(start, end, SpannableString(" ").apply {
-                setSpan(imageSpan, 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            })
-        } finally {
-            info.releasePermission()
-        }
-    }
 
     /**
      * 拦截粘贴操作：优先粘贴带格式的富文本
@@ -162,34 +133,45 @@ class RichEditText @JvmOverloads constructor(
     // ===== 格式化方法 =====
 
     /** 切换粗体 */
-    fun toggleBold() = toggleSpan(StyleSpan(Typeface.BOLD)) { it is StyleSpan && it.style == Typeface.BOLD }
+    fun toggleBold() = toggleSpan(StyleSpan(Typeface.BOLD)) { span ->
+        span is StyleSpan && span.style == Typeface.BOLD
+    }
 
     /** 切换斜体 */
-    fun toggleItalic() = toggleSpan(StyleSpan(Typeface.ITALIC)) { it is StyleSpan && it.style == Typeface.ITALIC }
+    fun toggleItalic() = toggleSpan(StyleSpan(Typeface.ITALIC)) { span ->
+        span is StyleSpan && span.style == Typeface.ITALIC
+    }
 
     /** 切换下划线 */
-    fun toggleUnderline() = toggleSpan(UnderlineSpan()) { it is UnderlineSpan }
+    fun toggleUnderline() = toggleSpan(UnderlineSpan()) { span ->
+        span is UnderlineSpan
+    }
 
     /** 切换删除线 */
-    fun toggleStrikethrough() = toggleSpan(StrikethroughSpan()) { it is StrikethroughSpan }
+    fun toggleStrikethrough() = toggleSpan(StrikethroughSpan()) { span ->
+        span is StrikethroughSpan
+    }
 
     private fun <T : CharacterStyle> toggleSpan(
         newSpan: T,
-        matcher: (Any) -> Boolean
+        matcher: (CharacterStyle) -> Boolean
     ) {
         val editable = editableText ?: return
         val start = selectionStart
         val end = selectionEnd
         if (start == end) return
 
-        @Suppress("UNCHECKED_CAST")
         val existingSpans = editable.getSpans(start, end, CharacterStyle::class.java)
-            .filter(matcher) as List<T>
+            .filter { matcher(it) }
 
+        @Suppress("UNCHECKED_CAST")
         if (existingSpans.isEmpty()) {
             editable.setSpan(newSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         } else {
-            existingSpans.forEach { span -> editable.removeSpan(span) }
+            existingSpans.forEach { span ->
+                @Suppress("UNCHECKED_CAST")
+                editable.removeSpan(span as CharacterStyle)
+            }
         }
         notifyChanged()
     }
