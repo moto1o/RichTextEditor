@@ -3,8 +3,8 @@ package com.example.richtexteditor.ui
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Typeface
+import android.os.Bundle
 import android.text.*
-import android.text.style.*
 import android.util.AttributeSet
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
@@ -34,8 +34,8 @@ class RichEditText @JvmOverloads constructor(
     override fun onCreateInputConnection(editorInfo: EditorInfo): InputConnection {
         val ic = super.onCreateInputConnection(editorInfo)!!
         EditorInfoCompat.setContentMimeTypes(editorInfo, arrayOf("image/*"))
-        val callback = InputConnectionCompat.OnCommitContentListener { _: InputContentInfoCompat, _: Int, _: EditorInfo ->
-            handleInputContentInfo(_)
+        val callback = InputConnectionCompat.OnCommitContentListener { inputContentInfo: InputContentInfoCompat, _: Int, _: Bundle? ->
+            handleInputContentInfo(inputContentInfo)
             true
         }
         return InputConnectionCompat.createWrapper(this, ic, editorInfo, callback)
