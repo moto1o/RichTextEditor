@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
 
         // 富文本格式变化回调（粘贴/格式切换后手动刷新预览）
         binding.richEditor.onRichTextChanged = { spanned ->
-            viewModel.onEditorContentChanged(spanned)
+            viewModel.onEditorContentChanged(SpannedString(spanned))
             updatePreview(spanned)
         }
     }
