@@ -250,7 +250,8 @@ class RichEditText @JvmOverloads constructor(
         val editable = editableText ?: return
         val start = selectionStart.takeIf { it >= 0 } ?: 0
         val end = (selectionEnd.takeIf { it > start } ?: editable.length).coerceAtLeast(start)
-        editable.setLineSpacing(0f, mult)
+        // setLineSpacing 是 TextView 方法，直接在 EditText 上调用
+        setLineSpacing(0f, mult)
         notifyChanged()
     }
 
