@@ -236,7 +236,7 @@ class RichEditText @JvmOverloads constructor(
     // ============================================================
 
     /**
-     * 应用行距（整段或整篇）
+     * 应用行距（整篇内容）
      * @param option 行距选项：0=小(1.0x), 1=默认(1.2x), 2=中(1.5x), 3=大(2.0x)
      */
     fun applyLineSpacing(option: Int) {
@@ -247,10 +247,8 @@ class RichEditText @JvmOverloads constructor(
             3 -> 2.0f   // 大
             else -> 1.2f
         }
-        val editable = editableText ?: return
-        val start = selectionStart.takeIf { it >= 0 } ?: 0
-        val end = (selectionEnd.takeIf { it > start } ?: editable.length).coerceAtLeast(start)
-        // setLineSpacing 是 TextView 方法，直接在 EditText 上调用
+        if (editableText == null) return
+        // setLineSpacing 是 TextView 方法，直接在 EditText 本身调用
         setLineSpacing(0f, mult)
         notifyChanged()
     }

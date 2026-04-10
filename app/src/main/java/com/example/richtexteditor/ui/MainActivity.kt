@@ -78,6 +78,19 @@ class MainActivity : AppCompatActivity() {
         val itemLayout = android.R.layout.simple_spinner_item
         val dropdownLayout = android.R.layout.simple_spinner_dropdown_item
 
+        // 标志位：跳过初始化时的自动触发（Android Spinner 绑定监听器时会立即回调一次）
+        var skipNextSelection = true
+
+        fun wrapListener(fn: (Int) -> Unit): android.widget.AdapterView.OnItemSelectedListener {
+            return object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                    if (skipNextSelection) return@onItemSelected
+                    fn(position)
+                }
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            }
+        }
+
         // 字体大小 Spinner
         val fontAdapter = android.widget.ArrayAdapter.createFromResource(
             this,
@@ -87,11 +100,8 @@ class MainActivity : AppCompatActivity() {
             setDropDownViewResource(dropdownLayout)
         }
         binding.spinnerFontSize.adapter = fontAdapter
-        binding.spinnerFontSize.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
-                binding.richEditor.applyFontSize(position)
-            }
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        binding.spinnerFontSize.onItemSelectedListener = wrapListener { pos ->
+            binding.richEditor.applyFontSize(pos)
         }
 
         // 缩进 Spinner
@@ -103,11 +113,8 @@ class MainActivity : AppCompatActivity() {
             setDropDownViewResource(dropdownLayout)
         }
         binding.spinnerIndent.adapter = indentAdapter
-        binding.spinnerIndent.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
-                binding.richEditor.applyIndent(position)
-            }
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        binding.spinnerIndent.onItemSelectedListener = wrapListener { pos ->
+            binding.richEditor.applyIndent(pos)
         }
 
         // 对齐 Spinner
@@ -119,11 +126,8 @@ class MainActivity : AppCompatActivity() {
             setDropDownViewResource(dropdownLayout)
         }
         binding.spinnerAlignment.adapter = alignAdapter
-        binding.spinnerAlignment.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
-                binding.richEditor.applyAlignment(position)
-            }
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        binding.spinnerAlignment.onItemSelectedListener = wrapListener { pos ->
+            binding.richEditor.applyAlignment(pos)
         }
 
         // 行距 Spinner
@@ -135,12 +139,12 @@ class MainActivity : AppCompatActivity() {
             setDropDownViewResource(dropdownLayout)
         }
         binding.spinnerLineSpacing.adapter = spacingAdapter
-        binding.spinnerLineSpacing.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
-                binding.richEditor.applyLineSpacing(position)
-            }
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        binding.spinnerLineSpacing.onItemSelectedListener = wrapListener { pos ->
+            binding.richEditor.applyLineSpacing(pos)
         }
+
+        // 所有 Spinner 绑定完成后，解除跳过标志，用户首次选择时才生效
+        skipNextSelection = false
     }
 
     // ===========================
