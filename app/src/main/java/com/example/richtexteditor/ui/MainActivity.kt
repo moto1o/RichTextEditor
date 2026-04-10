@@ -39,7 +39,7 @@ class MainActivity : AppCompatActivity() {
                         binding.richEditor.insertImage(bitmap)
                         showToast("图片已插入 ✓")
                     } else {
-                        showToast("图片加载失败", Toast.LENGTH_SHORT)
+                        showToast("图片加载失败")
                     }
                 }
             } catch (e: Exception) {
