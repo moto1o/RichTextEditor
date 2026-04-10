@@ -374,40 +374,79 @@ class RichEditText @JvmOverloads constructor(
     private fun loadImageFromSrc(src: String?): Drawable {
         if (src.isNullOrBlank()) return createPlaceholder()
         return try {
-            val uri = Uri.parse(src)
-            val drawable = when {
+            var bitmap: android.graphics.Bitmap? = null
+            var originalWidth = 0
+            var originalHeight = 0
+
+            when {
                 src.startsWith("data:") -> {
                     // Base64 Data URI
                     val base64 = src.substringAfter(",")
                     val bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT)
-                    val bmp = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    BitmapDrawable(resources, bmp)
+                    bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                 }
-                uri.scheme == "content" || uri.scheme == "file" -> {
-                    context.contentResolver.openInputStream(uri)?.use { stream ->
-                        val bmp = android.graphics.BitmapFactory.decodeStream(stream)
-                        BitmapDrawable(resources, bmp)
+                src.startsWith("http://") || src.startsWith("https://") -> {
+                    // 网络图片 - 同步下载（注意：这会阻塞，建议异步处理）
+                    try {
+                        val connection = java.net.URL(src).openConnection()
+                        connection.doInput = true
+                        connection.connectTimeout = 5000
+                        connection.inputStream.use { stream ->
+                            bitmap = android.graphics.BitmapFactory.decodeStream(stream)
+                        }
+                    } catch (e: Exception) {
+                        // 网络下载失败，返回占位符
+                        return createPlaceholder()
                     }
                 }
-                else -> null
-            } ?: return createPlaceholder()
+                else -> {
+                    // content:// 或 file://
+                    val uri = Uri.parse(src)
+                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                        bitmap = android.graphics.BitmapFactory.decodeStream(stream)
+                    }
+                }
+            }
+
+            if (bitmap == null) return createPlaceholder()
+
+            originalWidth = bitmap!!.width
+            originalHeight = bitmap!!.height
 
             // 限制最大宽度为屏幕宽度
             val maxWidth = resources.displayMetrics.widthPixels - (paddingLeft + paddingRight)
-            val w = drawable.intrinsicWidth.coerceAtLeast(1)
-            val h = drawable.intrinsicHeight.coerceAtLeast(1)
+            val w = originalWidth.coerceAtLeast(1)
+            val h = originalHeight.coerceAtLeast(1)
             val scale = if (w > maxWidth) maxWidth.toFloat() / w else 1f
-            drawable.setBounds(0, 0, (w * scale).toInt(), (h * scale).toInt())
-            drawable
+
+            // 缩放图片
+            val scaledBitmap = if (scale < 1f) {
+                android.graphics.Bitmap.createScaledBitmap(bitmap!!, (w * scale).toInt(), (h * scale).toInt(), true)
+            } else {
+                bitmap!!
+            }
+
+            val scaledDrawable = BitmapDrawable(resources, scaledBitmap)
+            scaledDrawable.setBounds(0, 0, scaledBitmap.width, scaledBitmap.height)
+            scaledDrawable
         } catch (e: Exception) {
+            e.printStackTrace()
             createPlaceholder()
         }
     }
 
     private fun createPlaceholder(): Drawable {
-        // 返回一个 16x16 的透明占位符，防止 ImageSpan 崩溃
-        val bmp = android.graphics.Bitmap.createBitmap(16, 16, android.graphics.Bitmap.Config.ARGB_8888)
-        return BitmapDrawable(resources, bmp).also { it.setBounds(0, 0, 16, 16) }
+        // 返回一个 100x100 的灰色占位符，便于调试
+        val bmp = android.graphics.Bitmap.createBitmap(100, 100, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bmp)
+        canvas.drawColor(android.graphics.Color.LTGRAY)
+        val paint = android.graphics.Paint().apply {
+            color = android.graphics.Color.GRAY
+            textSize = 24f
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
+        canvas.drawText("📷", 50f, 60f, paint)
+        return BitmapDrawable(resources, bmp).also { it.setBounds(0, 0, 100, 100) }
     }
 
     private fun insertSpanned(spanned: Spanned) {
