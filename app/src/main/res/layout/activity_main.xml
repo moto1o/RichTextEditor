@@ -181,84 +181,168 @@
     <LinearLayout
         android:id="@+id/editorToolbar"
         android:layout_width="match_parent"
-        android:layout_height="44dp"
-        android:orientation="horizontal"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:background="@drawable/bg_toolbar"
-        android:paddingHorizontal="8dp"
-        android:gravity="center_vertical"
         android:elevation="2dp">
 
-        <ImageButton
-            android:id="@+id/btnBold"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_format_bold"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/format_bold"
-            android:tint="@color/text_primary" />
+        <!-- 第一行：B / I / U / 图片 / 粘贴 + 字数 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_toolbar"
+            android:paddingHorizontal="8dp"
+            android:gravity="center_vertical">
 
-        <ImageButton
-            android:id="@+id/btnItalic"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_format_italic"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/format_italic"
-            android:tint="@color/text_primary" />
+            <ImageButton
+                android:id="@+id/btnBold"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_format_bold"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/format_bold"
+                android:tint="@color/text_primary" />
 
-        <ImageButton
-            android:id="@+id/btnUnderline"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_format_underline"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/format_underline"
-            android:tint="@color/text_primary" />
+            <ImageButton
+                android:id="@+id/btnItalic"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_format_italic"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/format_italic"
+                android:tint="@color/text_primary" />
 
-        <View
-            android:layout_width="1dp"
-            android:layout_height="24dp"
-            android:background="@color/divider_color"
-            android:layout_marginHorizontal="4dp" />
+            <ImageButton
+                android:id="@+id/btnUnderline"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_format_underline"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/format_underline"
+                android:tint="@color/text_primary" />
 
-        <ImageButton
-            android:id="@+id/btnInsertImage"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_insert_photo"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/insert_image"
-            android:tint="@color/text_primary" />
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:background="@color/divider_color"
+                android:layout_marginHorizontal="4dp" />
 
-        <View
-            android:layout_width="1dp"
-            android:layout_height="24dp"
-            android:background="@color/divider_color"
-            android:layout_marginHorizontal="4dp" />
+            <ImageButton
+                android:id="@+id/btnInsertImage"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_insert_photo"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/insert_image"
+                android:tint="@color/text_primary" />
 
-        <ImageButton
-            android:id="@+id/btnPasteRich"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_content_paste"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/paste_rich"
-            android:tint="@color/accent_color" />
+            <View
+                android:layout_width="1dp"
+                android:layout_height="24dp"
+                android:background="@color/divider_color"
+                android:layout_marginHorizontal="4dp" />
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            <ImageButton
+                android:id="@+id/btnPasteRich"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_content_paste"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/paste_rich"
+                android:tint="@color/accent_color" />
 
-        <!-- 字数统计 -->
-        <TextView
-            android:id="@+id/tvCharCount"
-            android:layout_width="wrap_content"
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- 字数统计 -->
+            <TextView
+                android:id="@+id/tvCharCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 字"
+                android:textSize="11sp"
+                android:textColor="@color/text_hint"
+                android:paddingEnd="4dp" />
+
+        </LinearLayout>
+
+        <!-- 第二行：字体 / 缩进 / 对齐 / 行距（可横向滚动） -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="0 字"
-            android:textSize="11sp"
-            android:textColor="@color/text_hint"
-            android:paddingEnd="4dp" />
+            android:scrollbars="none"
+            android:background="@android:color/white"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="4dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <!-- 字体大小 -->
+                <Spinner
+                    android:id="@+id/spinnerFontSize"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="80dp"
+                    android:background="@drawable/bg_spinner"
+                    android:paddingHorizontal="10dp"
+                    android:popupBackground="@android:color/white"
+                    android:dropDownWidth="120dp" />
+
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="0dp" />
+
+                <!-- 缩进 -->
+                <Spinner
+                    android:id="@+id/spinnerIndent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="80dp"
+                    android:background="@drawable/bg_spinner"
+                    android:paddingHorizontal="10dp"
+                    android:popupBackground="@android:color/white"
+                    android:dropDownWidth="120dp" />
+
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="0dp" />
+
+                <!-- 对齐 -->
+                <Spinner
+                    android:id="@+id/spinnerAlignment"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="80dp"
+                    android:background="@drawable/bg_spinner"
+                    android:paddingHorizontal="10dp"
+                    android:popupBackground="@android:color/white"
+                    android:dropDownWidth="120dp" />
+
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="0dp" />
+
+                <!-- 行距 -->
+                <Spinner
+                    android:id="@+id/spinnerLineSpacing"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:minWidth="80dp"
+                    android:background="@drawable/bg_spinner"
+                    android:paddingHorizontal="10dp"
+                    android:popupBackground="@android:color/white"
+                    android:dropDownWidth="120dp" />
+
+            </LinearLayout>
+
+        </HorizontalScrollView>
 
     </LinearLayout>
 

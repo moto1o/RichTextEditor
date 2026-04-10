@@ -14,10 +14,12 @@ import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.SpannedString
 import android.text.style.BackgroundColorSpan
+import android.text.style.AlignmentSpan
 import android.text.style.BulletSpan
 import android.text.style.CharacterStyle
 import android.text.style.ForegroundColorSpan
 import android.text.style.ImageSpan
+import android.text.style.LeadingMarginSpan
 import android.text.style.QuoteSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StrikethroughSpan
@@ -27,6 +29,7 @@ import android.text.style.SuperscriptSpan
 import android.text.style.TypefaceSpan
 import android.text.style.URLSpan
 import android.text.style.UnderlineSpan
+import android.text.style.AbsoluteSizeSpan
 import android.util.AttributeSet
 import android.graphics.Typeface
 import androidx.appcompat.widget.AppCompatEditText
@@ -137,6 +140,126 @@ class RichEditText @JvmOverloads constructor(
     fun toggleItalic() = toggleSpan(StyleSpan(Typeface.ITALIC)) { it is StyleSpan && it.style == Typeface.ITALIC }
     fun toggleUnderline() = toggleSpan(UnderlineSpan()) { it is UnderlineSpan }
     fun toggleStrikethrough() = toggleSpan(StrikethroughSpan()) { it is StrikethroughSpan }
+
+    // ============================================================
+    //  新增格式控制：字体大小
+    // ============================================================
+
+    /**
+     * 应用字体大小（选中区域或全段）
+     * @param size 字体大小选项索引：0=小(12sp), 1=中(14sp), 2=默认(16sp), 3=大(18sp), 4=超大(22sp)
+     */
+    fun applyFontSize(option: Int) {
+        val size = when (option) {
+            0 -> 12  // 小
+            1 -> 14  // 中
+            2 -> 16  // 默认
+            3 -> 18  // 大
+            4 -> 22  // 超大
+            else -> 16
+        }
+        val editable = editableText ?: return
+        val start = selectionStart.takeIf { it >= 0 } ?: return
+        val end = selectionEnd.takeIf { it > start } ?: return
+
+        // 移除同段落内所有 AbsoluteSizeSpan
+        editable.getSpans(start, end, AbsoluteSizeSpan::class.java).forEach { editable.removeSpan(it) }
+        editable.setSpan(AbsoluteSizeSpan(size, true), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        notifyChanged()
+    }
+
+    // ============================================================
+    //  新增格式控制：缩进
+    // ============================================================
+
+    /**
+     * 应用首行缩进（选中段落）
+     * @param option 缩进选项：0=默认（无缩进）, 1=小缩进(16dp), 2=中缩进(32dp), 3=大缩进(48dp)
+     */
+    fun applyIndent(option: Int) {
+        val indent = when (option) {
+            0 -> 0         // 默认：无缩进
+            1 -> dip(16)   // 小缩进
+            2 -> dip(32)   // 中缩进
+            3 -> dip(48)   // 大缩进
+            else -> 0
+        }
+        val editable = editableText ?: return
+        val text = editable.toString()
+        val start = selectionStart.takeIf { it >= 0 } ?: return
+        val end = (selectionEnd.takeIf { it > start } ?: return)
+
+        // 扩展到段落边界
+        val paraStart = text.lastIndexOf('\n', (start - 1).coerceAtLeast(0)).let { if (it < 0) 0 else it + 1 }
+        val paraEnd = text.indexOf('\n', end).let { if (it < 0) text.length else it }
+
+        // 移除旧 LeadingMarginSpan
+        editable.getSpans(paraStart, paraEnd, LeadingMarginSpan::class.java).forEach { editable.removeSpan(it) }
+        // 首行缩进 = indent，普通行缩进 = 0
+        editable.setSpan(LeadingMarginSpan.Standard(indent, 0), paraStart, paraEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        notifyChanged()
+    }
+
+    // ============================================================
+    //  新增格式控制：对齐
+    // ============================================================
+
+    /**
+     * 应用段落对齐（选中段落）
+     * @param option 对齐选项：0=两端, 1=居左, 2=居中, 3=居右
+     */
+    fun applyAlignment(option: Int) {
+        val alignment = when (option) {
+            0 -> android.text.Layout.Alignment.ALIGN_NORMAL    // 两端
+            1 -> android.text.Layout.Alignment.ALIGN_NORMAL    // 居左
+            2 -> android.text.Layout.Alignment.ALIGN_CENTER   // 居中
+            3 -> android.text.Layout.Alignment.ALIGN_OPPOSITE // 居右
+            else -> android.text.Layout.Alignment.ALIGN_NORMAL
+        }
+        val editable = editableText ?: return
+        val text = editable.toString()
+        val start = selectionStart.takeIf { it >= 0 } ?: return
+        val end = (selectionEnd.takeIf { it > start } ?: return)
+
+        // 扩展到段落边界
+        val paraStart = text.lastIndexOf('\n', (start - 1).coerceAtLeast(0)).let { if (it < 0) 0 else it + 1 }
+        val paraEnd = text.indexOf('\n', end).let { if (it < 0) text.length else it }
+
+        // 移除旧 AlignmentSpan
+        editable.getSpans(paraStart, paraEnd, AlignmentSpan::class.java).forEach { editable.removeSpan(it) }
+        editable.setSpan(AlignmentSpan.Standard(alignment), paraStart, paraEnd, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        notifyChanged()
+    }
+
+    // ============================================================
+    //  新增格式控制：行距
+    // ============================================================
+
+    /**
+     * 应用行距（整段或整篇）
+     * @param option 行距选项：0=小(1.0x), 1=默认(1.2x), 2=中(1.5x), 3=大(2.0x)
+     */
+    fun applyLineSpacing(option: Int) {
+        val mult = when (option) {
+            0 -> 1.0f   // 小
+            1 -> 1.2f   // 默认
+            2 -> 1.5f   // 中
+            3 -> 2.0f   // 大
+            else -> 1.2f
+        }
+        val editable = editableText ?: return
+        val start = selectionStart.takeIf { it >= 0 } ?: 0
+        val end = (selectionEnd.takeIf { it > start } ?: editable.length).coerceAtLeast(start)
+        editable.setLineSpacing(0f, mult)
+        notifyChanged()
+    }
+
+    // ============================================================
+    //  辅助方法
+    // ============================================================
+
+    /** dp 转 px */
+    private fun dip(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun <T : CharacterStyle> toggleSpan(
         newSpan: T,

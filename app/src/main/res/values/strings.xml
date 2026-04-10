@@ -27,4 +27,40 @@
     <string name="open_file">打开文件</string>
     <string name="label_editor_preview">📝 编辑 / 预览</string>
     <string name="hint_char_count">0 字</string>
+
+    <!-- 新增格式控制项 -->
+    <string name="format_font_size">字体</string>
+    <string name="format_indent">缩进</string>
+    <string name="format_alignment">对齐</string>
+    <string name="format_line_spacing">行距</string>
+
+    <!-- Spinner 选项 -->
+    <string-array name="font_size_options">
+        <item>小</item>
+        <item>中</item>
+        <item>默认</item>
+        <item>大</item>
+        <item>超大</item>
+    </string-array>
+
+    <string-array name="indent_options">
+        <item>默认</item>
+        <item>小缩进</item>
+        <item>中缩进</item>
+        <item>大缩进</item>
+    </string-array>
+
+    <string-array name="alignment_options">
+        <item>两端</item>
+        <item>居左</item>
+        <item>居中</item>
+        <item>居右</item>
+    </string-array>
+
+    <string-array name="line_spacing_options">
+        <item>小</item>
+        <item>默认</item>
+        <item>中</item>
+        <item>大</item>
+    </string-array>
 </resources>

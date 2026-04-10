@@ -26,8 +26,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
 
+        // 默认替换关键字
+        binding.etSearchKeyword.setText("【城市】")
+
         setupEditor()
         setupFormatToolbar()
+        setupSpinners()
         setupButtons()
         observeViewModel()
     }
@@ -63,6 +67,79 @@ class MainActivity : AppCompatActivity() {
         binding.btnPasteRich.setOnClickListener {
             binding.richEditor.pasteRichFromClipboard()
             showToast("已粘贴剪切板内容")
+        }
+    }
+
+    // ===========================
+    //  格式 Spinner 初始化
+    // ===========================
+    private fun setupSpinners() {
+        // Spinner item 布局
+        val itemLayout = android.R.layout.simple_spinner_item
+        val dropdownLayout = android.R.layout.simple_spinner_dropdown_item
+
+        // 字体大小 Spinner
+        val fontAdapter = android.widget.ArrayAdapter.createFromResource(
+            this,
+            com.example.richtexteditor.R.array.font_size_options,
+            itemLayout
+        ).apply {
+            setDropDownViewResource(dropdownLayout)
+        }
+        binding.spinnerFontSize.adapter = fontAdapter
+        binding.spinnerFontSize.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                binding.richEditor.applyFontSize(position)
+            }
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
+
+        // 缩进 Spinner
+        val indentAdapter = android.widget.ArrayAdapter.createFromResource(
+            this,
+            com.example.richtexteditor.R.array.indent_options,
+            itemLayout
+        ).apply {
+            setDropDownViewResource(dropdownLayout)
+        }
+        binding.spinnerIndent.adapter = indentAdapter
+        binding.spinnerIndent.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                binding.richEditor.applyIndent(position)
+            }
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
+
+        // 对齐 Spinner
+        val alignAdapter = android.widget.ArrayAdapter.createFromResource(
+            this,
+            com.example.richtexteditor.R.array.alignment_options,
+            itemLayout
+        ).apply {
+            setDropDownViewResource(dropdownLayout)
+        }
+        binding.spinnerAlignment.adapter = alignAdapter
+        binding.spinnerAlignment.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                binding.richEditor.applyAlignment(position)
+            }
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
+
+        // 行距 Spinner
+        val spacingAdapter = android.widget.ArrayAdapter.createFromResource(
+            this,
+            com.example.richtexteditor.R.array.line_spacing_options,
+            itemLayout
+        ).apply {
+            setDropDownViewResource(dropdownLayout)
+        }
+        binding.spinnerLineSpacing.adapter = spacingAdapter
+        binding.spinnerLineSpacing.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                binding.richEditor.applyLineSpacing(position)
+            }
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
         }
     }
 
