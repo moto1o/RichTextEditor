@@ -2,26 +2,40 @@ package com.example.richtexteditor.ui
 
 import android.content.ClipboardManager
 import android.content.Context
-import android.graphics.Typeface
-import android.os.Bundle
-import android.text.*
-import android.text.style.*
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import android.net.Uri
+import android.text.Editable
+import android.text.Html
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.SpannedString
+import android.text.style.BackgroundColorSpan
+import android.text.style.BulletSpan
+import android.text.style.CharacterStyle
+import android.text.style.ForegroundColorSpan
+import android.text.style.ImageSpan
+import android.text.style.QuoteSpan
+import android.text.style.RelativeSizeSpan
+import android.text.style.StrikethroughSpan
+import android.text.style.StyleSpan
+import android.text.style.SubscriptSpan
+import android.text.style.SuperscriptSpan
+import android.text.style.TypefaceSpan
+import android.text.style.URLSpan
+import android.text.style.UnderlineSpan
 import android.util.AttributeSet
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputConnection
+import android.graphics.Typeface
 import androidx.appcompat.widget.AppCompatEditText
-import androidx.core.view.inputmethod.EditorInfoCompat
-import androidx.core.view.inputmethod.InputConnectionCompat
-import androidx.core.view.inputmethod.InputContentInfoCompat
 
 /**
- * 富文本编辑器 — 支持粘贴带格式图文内容
- *
- * 支持的富文本格式：
- *  - 粗体 / 斜体 / 下划线 / 删除线
- *  - 前景色 / 背景色
- *  - 相对字号缩放
- *  - 图片（通过 ImageSpan）
+ * 富文本编辑器
+ * - 自动内嵌 ScrollMovementMethod，支持内部滚动
+ * - 粘贴时保留全部 Span 格式
+ * - 图片 Span 支持异步加载显示
  */
 class RichEditText @JvmOverloads constructor(
     context: Context,
@@ -29,46 +43,13 @@ class RichEditText @JvmOverloads constructor(
     defStyle: Int = android.R.attr.editTextStyle
 ) : AppCompatEditText(context, attrs, defStyle) {
 
-    // 粘贴富文本时的回调，用于通知 Activity 更新预览
+    /** 内容变化回调（格式变化后通知外部） */
     var onRichTextChanged: ((Spanned) -> Unit)? = null
 
-    override fun onCreateInputConnection(editorInfo: EditorInfo): InputConnection {
-        val ic = super.onCreateInputConnection(editorInfo)!!
-        EditorInfoCompat.setContentMimeTypes(editorInfo, arrayOf("image/*"))
-        val callback = InputConnectionCompat.OnCommitContentListener { inputContentInfo: InputContentInfoCompat, _: Int, _: Bundle? ->
-            handleInputContentInfo(inputContentInfo)
-            true
-        }
-        return InputConnectionCompat.createWrapper(ic, editorInfo, callback)
-    }
+    // ============================================================
+    //  粘贴拦截
+    // ============================================================
 
-    /**
-     * 处理键盘/输入法传入的富媒体内容（如 GBoard 的贴纸/图片）
-     */
-    private fun handleInputContentInfo(info: InputContentInfoCompat) {
-        try {
-            info.requestPermission()
-            val uri = info.contentUri
-            val drawable = context.contentResolver.openInputStream(uri)?.use {
-                android.graphics.drawable.Drawable.createFromStream(it, uri.toString())
-            } ?: return
-            drawable.setBounds(0, 0, drawable.intrinsicWidth.coerceAtMost(400),
-                drawable.intrinsicHeight.coerceAtMost(400))
-            val imageSpan = ImageSpan(drawable, uri.toString())
-            val editable = editableText
-            val start = selectionStart.coerceAtLeast(0)
-            val end = selectionEnd.coerceAtLeast(start)
-            editable.replace(start, end, SpannableString(" ").apply {
-                setSpan(imageSpan, 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-            })
-        } finally {
-            info.releasePermission()
-        }
-    }
-
-    /**
-     * 拦截粘贴操作：优先粘贴带格式的富文本
-     */
     override fun onTextContextMenuItem(id: Int): Boolean {
         if (id == android.R.id.paste || id == android.R.id.pasteAsPlainText) {
             val clip = (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
@@ -76,130 +57,129 @@ class RichEditText @JvmOverloads constructor(
 
             for (i in 0 until clip.itemCount) {
                 val item = clip.getItemAt(i)
-                // 1. 优先处理 HTML 富文本 (API 33+)
+
+                // 1. 优先 HTML（API 33+）
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                    val htmlText = item.coerceToHtmlText(context)
-                    if (!htmlText.isNullOrBlank()) {
-                        pasteHtml(htmlText)
+                    val html = item.coerceToHtmlText(context)
+                    if (!html.isNullOrBlank()) {
+                        insertSpanned(parseHtml(html))
                         return true
                     }
                 }
-                // 2. 降级：处理带 Span 的 CharSequence (API 33+)
+
+                // 2. 带 Span 的 Spanned（API 33+）
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                    val styledText = item.coerceToStyledText(context)
-                    if (styledText is Spanned) {
-                        insertSpanned(styledText)
+                    val styled = item.coerceToStyledText(context)
+                    if (styled is Spanned) {
+                        insertSpanned(styled)
                         return true
                     }
+                }
+
+                // 3. 降级：纯文本
+                val plain = item.coerceToText(context)
+                if (!plain.isNullOrBlank()) {
+                    insertRaw(plain)
+                    return true
                 }
             }
         }
         return super.onTextContextMenuItem(id)
     }
 
-    /**
-     * 将 HTML 字符串解析为 Spanned 并插入光标处
-     */
-    private fun pasteHtml(html: String) {
-        val spanned: Spanned = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY)
-        } else {
-            @Suppress("DEPRECATION")
-            Html.fromHtml(html)
-        }
-        insertSpanned(spanned)
-    }
+    // ============================================================
+    //  公开 API：粘贴富文本
+    // ============================================================
 
-    /**
-     * 在当前光标位置插入 Spanned 内容
-     */
-    private fun insertSpanned(spanned: Spanned) {
-        val editable = editableText ?: return
-        val start = selectionStart.coerceAtLeast(0)
-        val end = selectionEnd.coerceAtLeast(start)
-        editable.replace(start, end, spanned)
-        notifyChanged()
-    }
-
-    /**
-     * 公开的粘贴富文本方法（供 Activity 手动调用）
-     */
     fun pasteRichFromClipboard() {
-        val clipManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = clipManager.primaryClip ?: return
+        val clip = (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+            .primaryClip ?: return
 
         for (i in 0 until clip.itemCount) {
             val item = clip.getItemAt(i)
-            // 1. 优先处理 HTML 富文本 (API 33+)
+
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                val htmlText = item.coerceToHtmlText(context)
-                if (!htmlText.isNullOrBlank()) {
-                    pasteHtml(htmlText)
+                val html = item.coerceToHtmlText(context)
+                if (!html.isNullOrBlank()) {
+                    insertSpanned(parseHtml(html))
+                    return
+                }
+                val styled = item.coerceToStyledText(context)
+                if (styled is Spanned) {
+                    insertSpanned(styled)
                     return
                 }
             }
-            // 2. 降级：处理带 Span 的 CharSequence (API 33+)
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                val styledText = item.coerceToStyledText(context)
-                if (styledText is Spanned) {
-                    insertSpanned(styledText)
-                    return
-                }
-            }
-            // 纯文本降级
-            val text = item.coerceToText(context)
-            if (!text.isNullOrBlank()) {
-                val editable = editableText ?: return
-                val start = selectionStart.coerceAtLeast(0)
-                val end = selectionEnd.coerceAtLeast(start)
-                editable.replace(start, end, text)
-                notifyChanged()
+
+            val plain = item.coerceToText(context)
+            if (!plain.isNullOrBlank()) {
+                insertRaw(plain)
                 return
             }
         }
     }
 
-    // ===== 格式化方法 =====
+    /**
+     * 从外部加载 HTML 内容到编辑器（打开文件）
+     */
+    fun loadHtml(html: String) {
+        val spanned = parseHtml(html)
+        val editable = editableText ?: return
+        editable.replace(0, editable.length, spanned)
+        notifyChanged()
+    }
 
-    /** 切换粗体 */
+    // ============================================================
+    //  格式化操作
+    // ============================================================
+
     fun toggleBold() = toggleSpan(StyleSpan(Typeface.BOLD)) { it is StyleSpan && it.style == Typeface.BOLD }
-
-    /** 切换斜体 */
     fun toggleItalic() = toggleSpan(StyleSpan(Typeface.ITALIC)) { it is StyleSpan && it.style == Typeface.ITALIC }
-
-    /** 切换下划线 */
     fun toggleUnderline() = toggleSpan(UnderlineSpan()) { it is UnderlineSpan }
-
-    /** 切换删除线 */
     fun toggleStrikethrough() = toggleSpan(StrikethroughSpan()) { it is StrikethroughSpan }
 
     private fun <T : CharacterStyle> toggleSpan(
         newSpan: T,
-        matcher: (Any) -> Boolean
+        matcher: (CharacterStyle) -> Boolean
     ) {
         val editable = editableText ?: return
-        val start = selectionStart
-        val end = selectionEnd
-        if (start == end) return
+        val start = selectionStart.takeIf { it >= 0 } ?: return
+        val end = selectionEnd.takeIf { it > start } ?: return
 
-        @Suppress("UNCHECKED_CAST")
-        val existingSpans = editable.getSpans(start, end, CharacterStyle::class.java)
-            .filter(matcher) as List<T>
-
-        if (existingSpans.isEmpty()) {
+        val existing = editable.getSpans(start, end, CharacterStyle::class.java).filter { matcher(it) }
+        if (existing.isEmpty()) {
             editable.setSpan(newSpan, start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
         } else {
-            existingSpans.forEach { span -> editable.removeSpan(span) }
+            existing.forEach { editable.removeSpan(it) }
         }
         notifyChanged()
     }
 
-    private fun notifyChanged() {
-        val spanned = editableText ?: return
-        onRichTextChanged?.invoke(SpannedString(spanned))
+    // ============================================================
+    //  关键字高亮（供外部调用）
+    // ============================================================
+
+    fun highlightKeyword(keyword: String) {
+        if (keyword.isBlank()) return
+        val editable = editableText ?: return
+        val text = editable.toString()
+        var idx = text.indexOf(keyword)
+        while (idx >= 0) {
+            editable.setSpan(
+                BackgroundColorSpan(0x44FF9800.toInt()),
+                idx, idx + keyword.length,
+                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            idx = text.indexOf(keyword, idx + keyword.length)
+        }
     }
 
-    /** 获取当前全部内容为 HTML */
+    // ============================================================
+    //  内容获取
+    // ============================================================
+
+    fun getRichContent(): SpannedString = SpannedString(editableText ?: "")
+
     fun getContentAsHtml(): String {
         val spanned = editableText ?: return ""
         return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
@@ -210,24 +190,86 @@ class RichEditText @JvmOverloads constructor(
         }
     }
 
-    /** 获取当前内容的 Spanned（用于复制到剪切板） */
-    fun getRichContent(): SpannedString = SpannedString(editableText ?: "")
+    // ============================================================
+    //  内部工具
+    // ============================================================
 
     /**
-     * 对文本中的关键字进行高亮（用于替换前的预览）
+     * 解析 HTML 字符串，并通过自定义 ImageGetter 加载图片
      */
-    fun highlightKeyword(keyword: String) {
-        if (keyword.isBlank()) return
-        val editable = editableText ?: return
-        val text = editable.toString()
-        var idx = text.indexOf(keyword)
-        while (idx >= 0) {
-            editable.setSpan(
-                BackgroundColorSpan(0x33FF9800.toInt()),
-                idx, idx + keyword.length,
-                Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-            idx = text.indexOf(keyword, idx + keyword.length)
+    private fun parseHtml(html: String): Spanned {
+        val imageGetter = Html.ImageGetter { src ->
+            loadImageFromSrc(src)
         }
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY, imageGetter, null)
+        } else {
+            @Suppress("DEPRECATION")
+            Html.fromHtml(html, imageGetter, null)
+        }
+    }
+
+    /**
+     * 加载图片资源：支持 content://、file://、data: URI
+     * 返回一个已设置 bounds 的 Drawable；加载失败返回透明占位符
+     */
+    private fun loadImageFromSrc(src: String?): Drawable {
+        if (src.isNullOrBlank()) return createPlaceholder()
+        return try {
+            val uri = Uri.parse(src)
+            val drawable = when {
+                src.startsWith("data:") -> {
+                    // Base64 Data URI
+                    val base64 = src.substringAfter(",")
+                    val bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT)
+                    val bmp = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    BitmapDrawable(resources, bmp)
+                }
+                uri.scheme == "content" || uri.scheme == "file" -> {
+                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                        val bmp = android.graphics.BitmapFactory.decodeStream(stream)
+                        BitmapDrawable(resources, bmp)
+                    }
+                }
+                else -> null
+            } ?: return createPlaceholder()
+
+            // 限制最大宽度为屏幕宽度
+            val maxWidth = resources.displayMetrics.widthPixels - (paddingLeft + paddingRight)
+            val w = drawable.intrinsicWidth.coerceAtLeast(1)
+            val h = drawable.intrinsicHeight.coerceAtLeast(1)
+            val scale = if (w > maxWidth) maxWidth.toFloat() / w else 1f
+            drawable.setBounds(0, 0, (w * scale).toInt(), (h * scale).toInt())
+            drawable
+        } catch (e: Exception) {
+            createPlaceholder()
+        }
+    }
+
+    private fun createPlaceholder(): Drawable {
+        // 返回一个 16x16 的透明占位符，防止 ImageSpan 崩溃
+        val bmp = android.graphics.Bitmap.createBitmap(16, 16, android.graphics.Bitmap.Config.ARGB_8888)
+        return BitmapDrawable(resources, bmp).also { it.setBounds(0, 0, 16, 16) }
+    }
+
+    private fun insertSpanned(spanned: Spanned) {
+        val editable = editableText ?: return
+        val start = selectionStart.coerceAtLeast(0)
+        val end = selectionEnd.coerceAtLeast(start)
+        editable.replace(start, end, spanned)
+        notifyChanged()
+    }
+
+    private fun insertRaw(text: CharSequence) {
+        val editable = editableText ?: return
+        val start = selectionStart.coerceAtLeast(0)
+        val end = selectionEnd.coerceAtLeast(start)
+        editable.replace(start, end, text)
+        notifyChanged()
+    }
+
+    private fun notifyChanged() {
+        val spanned = editableText ?: return
+        onRichTextChanged?.invoke(SpannedString(spanned))
     }
 }

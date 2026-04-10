@@ -1,363 +1,295 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<!--
+    整体结构（从上到下固定）：
+    1. Toolbar（标题栏）
+    2. 操作栏（关键字替换 + 六大按钮）—— 固定，不滚动
+    3. 格式工具栏 —— 固定，不滚动
+    4. 编辑区（支持内部滚动，编辑即实时预览）
+    5. 状态栏 + 字数
+-->
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="@color/background_color"
     tools:context=".ui.MainActivity">
 
-    <!-- AppBar -->
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appBarLayout"
+    <!-- ① Toolbar -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/primary_color"
+        app:titleTextColor="@android:color/white"
+        app:title="@string/app_name" />
+
+    <!-- ② 操作栏（固定，不随编辑区滚动） -->
+    <LinearLayout
+        android:id="@+id/actionBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+        android:orientation="vertical"
+        android:background="@android:color/white"
+        android:elevation="4dp"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="8dp">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@color/primary_color"
-            app:titleTextColor="@android:color/white"
-            app:title="@string/app_name" />
-
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <!-- 主内容区域 -->
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        android:fillViewport="true">
-
+        <!-- 关键字替换行 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
 
-            <!-- ========== 富文本编辑区 ========== -->
-            <TextView
-                android:layout_width="match_parent"
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="@string/label_editor"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:paddingBottom="6dp" />
-
-            <!-- 编辑器工具栏 -->
-            <LinearLayout
-                android:id="@+id/editorToolbar"
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:orientation="horizontal"
-                android:background="@drawable/bg_toolbar"
-                android:paddingHorizontal="4dp"
-                android:gravity="center_vertical">
-
-                <ImageButton
-                    android:id="@+id/btnBold"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:src="@drawable/ic_format_bold"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/format_bold"
-                    android:tint="@color/text_primary" />
-
-                <ImageButton
-                    android:id="@+id/btnItalic"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:src="@drawable/ic_format_italic"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/format_italic"
-                    android:tint="@color/text_primary" />
-
-                <ImageButton
-                    android:id="@+id/btnUnderline"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:src="@drawable/ic_format_underline"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/format_underline"
-                    android:tint="@color/text_primary" />
-
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="24dp"
-                    android:background="@color/divider_color"
-                    android:layout_marginHorizontal="4dp" />
-
-                <ImageButton
-                    android:id="@+id/btnInsertImage"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:src="@drawable/ic_insert_photo"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/insert_image"
-                    android:tint="@color/text_primary" />
-
-                <View
-                    android:layout_width="1dp"
-                    android:layout_height="24dp"
-                    android:background="@color/divider_color"
-                    android:layout_marginHorizontal="4dp" />
-
-                <ImageButton
-                    android:id="@+id/btnPasteRich"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:src="@drawable/ic_content_paste"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/paste_rich"
-                    android:tint="@color/accent_color" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/hint_paste_rich"
-                    android:textSize="11sp"
-                    android:textColor="@color/text_hint"
-                    android:paddingStart="4dp" />
-
-            </LinearLayout>
-
-            <!-- 富文本编辑框 -->
-            <com.example.richtexteditor.ui.RichEditText
-                android:id="@+id/richEditor"
-                android:layout_width="match_parent"
-                android:layout_height="220dp"
-                android:background="@drawable/bg_editor"
-                android:padding="12dp"
-                android:gravity="top"
-                android:textSize="15sp"
-                android:textColor="@color/text_primary"
-                android:inputType="textMultiLine|textCapSentences"
-                android:hint="@string/hint_editor"
-                android:textColorHint="@color/text_hint"
-                android:scrollbars="vertical"
-                android:overScrollMode="always" />
-
-            <!-- 分割线 -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider_color"
-                android:layout_marginVertical="16dp" />
-
-            <!-- ========== 实时预览区 ========== -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingBottom="6dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/label_preview"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvCharCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0 字"
-                    android:textSize="12sp"
-                    android:textColor="@color/text_hint" />
-
-            </LinearLayout>
-
-            <ScrollView
-                android:layout_width="match_parent"
-                android:layout_height="180dp"
-                android:background="@drawable/bg_preview">
-
-                <TextView
-                    android:id="@+id/tvPreview"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+                app:hintTextColor="@color/text_hint"
+                android:hint="@string/hint_search_keyword">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etSearchKeyword"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="12dp"
-                    android:textSize="15sp"
-                    android:textColor="@color/text_primary"
-                    android:textColorHint="@color/text_hint"
-                    android:hint="@string/hint_preview" />
+                    android:inputType="text"
+                    android:textSize="13sp" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-            </ScrollView>
-
-            <!-- 分割线 -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider_color"
-                android:layout_marginVertical="16dp" />
-
-            <!-- ========== 关键字替换区 ========== -->
-            <TextView
-                android:layout_width="match_parent"
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="@string/label_replace"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:paddingBottom="8dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="8dp">
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+                app:hintTextColor="@color/text_hint"
+                android:hint="@string/hint_replace_content">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etReplaceContent"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
-                    app:hintTextColor="@color/text_hint"
-                    android:hint="@string/hint_search_keyword">
+                    android:inputType="text"
+                    android:textSize="13sp" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etSearchKeyword"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="text"
-                        android:textSize="14sp" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
-                    app:hintTextColor="@color/text_hint"
-                    android:hint="@string/hint_replace_content">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etReplaceContent"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="text"
-                        android:textSize="14sp" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-            </LinearLayout>
-
-            <!-- ========== 五大操作按钮 ========== -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="4dp">
-
-                <!-- 按钮1: 替换 -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnReplace"
-                    android:layout_width="0dp"
-                    android:layout_height="42dp"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
-                    android:text="@string/btn_replace"
-                    android:textSize="12sp"
-                    android:paddingHorizontal="4dp"
-                    app:backgroundTint="@color/btn_replace_color"
-                    app:cornerRadius="8dp"
-                    app:icon="@drawable/ic_find_replace"
-                    app:iconSize="16dp"
-                    app:iconPadding="2dp" />
-
-                <!-- 按钮2: 复制全部 -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnCopyAll"
-                    android:layout_width="0dp"
-                    android:layout_height="42dp"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
-                    android:text="@string/btn_copy_all"
-                    android:textSize="12sp"
-                    android:paddingHorizontal="4dp"
-                    app:backgroundTint="@color/btn_copy_color"
-                    app:cornerRadius="8dp"
-                    app:icon="@drawable/ic_copy"
-                    app:iconSize="16dp"
-                    app:iconPadding="2dp" />
-
-                <!-- 按钮3: 复制并清空 -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnCopyAndClear"
-                    android:layout_width="0dp"
-                    android:layout_height="42dp"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
-                    android:text="@string/btn_copy_clear"
-                    android:textSize="11sp"
-                    android:paddingHorizontal="4dp"
-                    app:backgroundTint="@color/btn_copy_clear_color"
-                    app:cornerRadius="8dp"
-                    app:icon="@drawable/ic_copy_clear"
-                    app:iconSize="16dp"
-                    app:iconPadding="2dp" />
-
-                <!-- 按钮4: 清空 -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnClear"
-                    android:layout_width="0dp"
-                    android:layout_height="42dp"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
-                    android:text="@string/btn_clear"
-                    android:textSize="12sp"
-                    android:paddingHorizontal="4dp"
-                    app:backgroundTint="@color/btn_clear_color"
-                    app:cornerRadius="8dp"
-                    app:icon="@drawable/ic_clear"
-                    app:iconSize="16dp"
-                    app:iconPadding="2dp" />
-
-                <!-- 按钮5: 保存 -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnSave"
-                    android:layout_width="0dp"
-                    android:layout_height="42dp"
-                    android:layout_weight="1"
-                    android:text="@string/btn_save"
-                    android:textSize="12sp"
-                    android:paddingHorizontal="4dp"
-                    app:backgroundTint="@color/btn_save_color"
-                    app:cornerRadius="8dp"
-                    app:icon="@drawable/ic_save"
-                    app:iconSize="16dp"
-                    app:iconPadding="2dp" />
-
-            </LinearLayout>
-
-            <!-- 底部状态栏 -->
-            <TextView
-                android:id="@+id/tvStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text=""
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnReplace"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="@string/btn_replace"
                 android:textSize="12sp"
-                android:textColor="@color/accent_color"
-                android:gravity="center"
-                android:visibility="gone" />
-
-            <!-- 底部留白 -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="24dp" />
+                android:paddingHorizontal="10dp"
+                app:backgroundTint="@color/btn_replace_color"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_find_replace"
+                app:iconSize="15dp"
+                app:iconPadding="2dp" />
 
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+        <!-- 六大功能按钮行 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOpen"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="@string/btn_open"
+                android:textSize="11sp"
+                android:paddingHorizontal="2dp"
+                app:backgroundTint="@color/btn_replace_color"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_open_file"
+                app:iconSize="14dp"
+                app:iconPadding="2dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCopyAll"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="@string/btn_copy_all"
+                android:textSize="11sp"
+                android:paddingHorizontal="2dp"
+                app:backgroundTint="@color/btn_copy_color"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_copy"
+                app:iconSize="14dp"
+                app:iconPadding="2dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCopyAndClear"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="@string/btn_copy_clear"
+                android:textSize="11sp"
+                android:paddingHorizontal="2dp"
+                app:backgroundTint="@color/btn_copy_clear_color"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_copy_clear"
+                app:iconSize="14dp"
+                app:iconPadding="2dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnClear"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="@string/btn_clear"
+                android:textSize="11sp"
+                android:paddingHorizontal="2dp"
+                app:backgroundTint="@color/btn_clear_color"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_clear"
+                app:iconSize="14dp"
+                app:iconPadding="2dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSave"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:text="@string/btn_save"
+                android:textSize="11sp"
+                android:paddingHorizontal="2dp"
+                app:backgroundTint="@color/btn_save_color"
+                app:cornerRadius="8dp"
+                app:icon="@drawable/ic_save"
+                app:iconSize="14dp"
+                app:iconPadding="2dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- ③ 格式工具栏（固定，不随编辑区滚动） -->
+    <LinearLayout
+        android:id="@+id/editorToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:orientation="horizontal"
+        android:background="@drawable/bg_toolbar"
+        android:paddingHorizontal="8dp"
+        android:gravity="center_vertical"
+        android:elevation="2dp">
+
+        <ImageButton
+            android:id="@+id/btnBold"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_format_bold"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/format_bold"
+            android:tint="@color/text_primary" />
+
+        <ImageButton
+            android:id="@+id/btnItalic"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_format_italic"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/format_italic"
+            android:tint="@color/text_primary" />
+
+        <ImageButton
+            android:id="@+id/btnUnderline"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_format_underline"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/format_underline"
+            android:tint="@color/text_primary" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="24dp"
+            android:background="@color/divider_color"
+            android:layout_marginHorizontal="4dp" />
+
+        <ImageButton
+            android:id="@+id/btnInsertImage"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_insert_photo"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/insert_image"
+            android:tint="@color/text_primary" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="24dp"
+            android:background="@color/divider_color"
+            android:layout_marginHorizontal="4dp" />
+
+        <ImageButton
+            android:id="@+id/btnPasteRich"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_content_paste"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/paste_rich"
+            android:tint="@color/accent_color" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- 字数统计 -->
+        <TextView
+            android:id="@+id/tvCharCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 字"
+            android:textSize="11sp"
+            android:textColor="@color/text_hint"
+            android:paddingEnd="4dp" />
+
+    </LinearLayout>
+
+    <!-- ④ 编辑区（占满剩余空间，内部可滚动）-->
+    <com.example.richtexteditor.ui.RichEditText
+        android:id="@+id/richEditor"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_editor"
+        android:padding="14dp"
+        android:gravity="top"
+        android:textSize="15sp"
+        android:textColor="@color/text_primary"
+        android:inputType="textMultiLine|textCapSentences"
+        android:hint="@string/hint_editor"
+        android:textColorHint="@color/text_hint"
+        android:scrollbars="vertical"
+        android:overScrollMode="always" />
+
+    <!-- ⑤ 状态栏 -->
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="28dp"
+        android:gravity="center"
+        android:textSize="12sp"
+        android:textColor="@color/accent_color"
+        android:background="@android:color/white"
+        android:paddingVertical="4dp"
+        android:visibility="gone" />
+
+</LinearLayout>

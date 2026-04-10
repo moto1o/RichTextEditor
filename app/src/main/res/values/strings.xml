@@ -23,4 +23,8 @@
     <string name="btn_copy_clear">复制清空</string>
     <string name="btn_clear">清空</string>
     <string name="btn_save">保存</string>
+    <string name="btn_open">打开</string>
+    <string name="open_file">打开文件</string>
+    <string name="label_editor_preview">📝 编辑 / 预览</string>
+    <string name="hint_char_count">0 字</string>
 </resources>
