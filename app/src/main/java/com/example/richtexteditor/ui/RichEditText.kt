@@ -297,6 +297,42 @@ class RichEditText @JvmOverloads constructor(
     }
 
     // ============================================================
+    //  公开 API：插入图片
+    // ============================================================
+
+    /**
+     * 在光标位置插入图片
+     * @param bitmap 要插入的图片
+     */
+    fun insertImage(bitmap: android.graphics.Bitmap) {
+        val editable = editableText ?: return
+        val start = selectionStart.coerceAtLeast(0)
+        val end = selectionEnd.coerceAtLeast(start)
+
+        // 限制最大宽度为屏幕宽度
+        val maxWidth = resources.displayMetrics.widthPixels - (paddingLeft + paddingRight)
+        val w = bitmap.width
+        val h = bitmap.height
+        val scale = if (w > maxWidth) maxWidth.toFloat() / w else 1f
+        val scaledWidth = (w * scale).toInt()
+        val scaledHeight = (h * scale).toInt()
+
+        // 缩放图片
+        val scaledBitmap = if (scale < 1f) {
+            android.graphics.Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, true)
+        } else {
+            bitmap
+        }
+
+        val drawable = BitmapDrawable(resources, scaledBitmap)
+        drawable.setBounds(0, 0, scaledWidth, scaledHeight)
+
+        val imageSpan = ImageSpan(drawable, ImageSpan.ALIGN_BOTTOM)
+        editable.setSpan(imageSpan, start, end + 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        notifyChanged()
+    }
+
+    // ============================================================
     //  内容获取
     // ============================================================
 

@@ -1,7 +1,11 @@
 package com.example.richtexteditor.ui
 
+import android.Manifest
 import android.app.AlertDialog
+import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.SpannableString
@@ -9,8 +13,11 @@ import android.text.SpannedString
 import android.text.TextWatcher
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.example.richtexteditor.databinding.ActivityMainBinding
 import com.example.richtexteditor.utils.FileUtils
 import com.example.richtexteditor.viewmodel.EditorViewModel
@@ -19,6 +26,48 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: EditorViewModel by viewModels()
+
+    // Photo Picker（Android 13+）或传统图库选择
+    private val pickImageLauncher = registerForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                contentResolver.openInputStream(uri)?.use { stream ->
+                    val bitmap = BitmapFactory.decodeStream(stream)
+                    if (bitmap != null) {
+                        binding.richEditor.insertImage(bitmap)
+                        showToast("图片已插入 ✓")
+                    } else {
+                        showToast("图片加载失败", Toast.LENGTH_SHORT)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                showToast("图片加载失败：${e.message}")
+            }
+        }
+    }
+
+    // 传统图库选择（Android 12 及以下兼容）
+    private val pickImageLegacyLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                contentResolver.openInputStream(uri)?.use { stream ->
+                    val bitmap = BitmapFactory.decodeStream(stream)
+                    if (bitmap != null) {
+                        binding.richEditor.insertImage(bitmap)
+                        showToast("图片已插入 ✓")
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                showToast("图片加载失败")
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,7 +111,13 @@ class MainActivity : AppCompatActivity() {
         binding.btnItalic.setOnClickListener { binding.richEditor.toggleItalic() }
         binding.btnUnderline.setOnClickListener { binding.richEditor.toggleUnderline() }
         binding.btnInsertImage.setOnClickListener {
-            showToast("请从相册选择图片（功能扩展中）")
+            // 优先使用 Photo Picker（Android 13+，无需权限）
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                pickImageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            } else {
+                // 降级：使用传统图库选择
+                pickImageLegacyLauncher.launch("image/*")
+            }
         }
         binding.btnPasteRich.setOnClickListener {
             binding.richEditor.pasteRichFromClipboard()
